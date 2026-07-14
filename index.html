@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quotient — Random Quote Generator</title>
+<style>
+  :root {
+    --ink: #1b1a17;
+    --paper: #faf6ee;
+    --line: #d8cfba;
+    --accent: #8a5a3b;
+    --accent-soft: #e7d9c3;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--paper);
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(138,90,59,0.06), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(138,90,59,0.06), transparent 40%);
+    font-family: 'Georgia', 'Iowan Old Style', serif;
+    color: var(--ink);
+    padding: 24px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 620px;
+    background: #fffdf9;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 56px 48px;
+    position: relative;
+    box-shadow: 0 1px 0 var(--line), 0 20px 40px -30px rgba(27,26,23,0.4);
+  }
+
+  .card::before {
+    content: "”";
+    position: absolute;
+    top: -6px;
+    left: 28px;
+    font-size: 120px;
+    color: var(--accent-soft);
+    font-family: Georgia, serif;
+    line-height: 1;
+    z-index: 0;
+  }
+
+  .eyebrow {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 11px;
+    color: var(--accent);
+    margin-bottom: 24px;
+  }
+
+  #quote-text {
+    position: relative;
+    z-index: 1;
+    font-size: 28px;
+    line-height: 1.5;
+    margin: 0 0 28px;
+    min-height: 130px;
+    transition: opacity 0.25s ease;
+  }
+
+  #quote-author {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.03em;
+    color: #6b6459;
+    margin: 0 0 36px;
+    transition: opacity 0.25s ease;
+  }
+
+  #quote-author::before {
+    content: "— ";
+  }
+
+  .fade {
+    opacity: 0;
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+  }
+
+  button#new-quote {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 13px 26px;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+
+  button#new-quote:hover {
+    background: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  button#new-quote:active {
+    transform: translateY(0);
+  }
+
+  button#new-quote:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .counter {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    color: #a39c8c;
+    letter-spacing: 0.04em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #quote-text, #quote-author, button#new-quote { transition: none; }
+  }
+
+  @media (max-width: 480px) {
+    .card { padding: 40px 26px; }
+    #quote-text { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+  <main class="card">
+    <p class="eyebrow">Quote No. <span id="quote-index">01</span></p>
+    <p id="quote-text">Loading…</p>
+    <p id="quote-author"></p>
+    <div class="actions">
+      <button id="new-quote">New Quote</button>
+      <span class="counter" id="seen-counter">0 quotes seen</span>
+    </div>
+  </main>
+
+<script>
+  const quotes = [
+    { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+    { text: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
+    { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+    { text: "In the middle of difficulty lies opportunity.", author: "Albert Einstein" },
+    { text: "What we think, we become.", author: "Buddha" },
+    { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+    { text: "Well done is better than well said.", author: "Benjamin Franklin" },
+    { text: "Do not wait to strike till the iron is hot, but make it hot by striking.", author: "William Butler Yeats" },
+    { text: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky" },
+    { text: "Knowing yourself is the beginning of all wisdom.", author: "Aristotle" },
+    { text: "Life is what happens when you're busy making other plans.", author: "John Lennon" },
+    { text: "The best way out is always through.", author: "Robert Frost" },
+    { text: "Whether you think you can or you think you can't, you're right.", author: "Henry Ford" },
+    { text: "Not all those who wander are lost.", author: "J.R.R. Tolkien" },
+    { text: "The journey of a thousand miles begins with a single step.", author: "Lao Tzu" }
+  ];
+
+  let seenCount = 0;
+  let lastIndex = -1;
+
+  const textEl = document.getElementById('quote-text');
+  const authorEl = document.getElementById('quote-author');
+  const indexEl = document.getElementById('quote-index');
+  const counterEl = document.getElementById('seen-counter');
+  const button = document.getElementById('new-quote');
+
+  function pickIndex() {
+    if (quotes.length === 1) return 0;
+    let i;
+    do {
+      i = Math.floor(Math.random() * quotes.length);
+    } while (i === lastIndex);
+    return i;
+  }
+
+  function showQuote() {
+    textEl.classList.add('fade');
+    authorEl.classList.add('fade');
+
+    setTimeout(() => {
+      const i = pickIndex();
+      lastIndex = i;
+      const q = quotes[i];
+      textEl.textContent = q.text;
+      authorEl.textContent = q.author;
+      indexEl.textContent = String(i + 1).padStart(2, '0');
+
+      seenCount++;
+      counterEl.textContent = `${seenCount} quote${seenCount === 1 ? '' : 's'} seen`;
+
+      textEl.classList.remove('fade');
+      authorEl.classList.remove('fade');
+    }, 200);
+  }
+
+  button.addEventListener('click', showQuote);
+  window.addEventListener('DOMContentLoaded', showQuote);
+</script>
+
+</body>
+</html>
